@@ -67,12 +67,18 @@ async def test_reconnect_service_calls_clients() -> None:
     entry = MagicMock()
     entry.entry_id = "entry-1"
     entry.data = {"host": "localhost", "port": 1, "token": None}
+    entry.options = {}
     entry.async_on_unload = MagicMock()
     entry.add_update_listener = MagicMock()
 
     await integration.async_setup_entry(hass, entry)
 
-    handler = hass.services.async_register.call_args.args[2]
+    handler = None
+    for call in hass.services.async_register.call_args_list:
+        if call.args[1] == integration.SERVICE_RECONNECT:
+            handler = call.args[2]
+            break
+    assert handler is not None
     client = hass.data[integration.DOMAIN]["entry-1"]
     client.connect.reset_mock()
     client.disconnect.reset_mock()
